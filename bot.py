@@ -7,6 +7,8 @@ import sqlite3
 import requests
 import names
 import telebot
+import http.server
+import socketserver
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # ------------------- Configuration -------------------
@@ -590,6 +592,29 @@ def delete_user_by_id(message):
     conn.close()
     bot.send_message(user_id, f"✅ User {target_id} and all their accounts deleted.")
     log_admin_action("Delete user", f"Admin {user_id} deleted user {target_id}")
+    # ... (your existing code, including bot handlers, etc.) ...
+
+# --- Dummy HTTP server to satisfy Render port binding ---
+class DummyHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+
+def start_dummy_server():
+    port = int(os.environ.get("PORT", 10000))
+    with socketserver.TCPServer(("0.0.0.0", port), DummyHandler) as httpd:
+        print(f"Dummy HTTP server running on port {port}")
+        httpd.serve_forever()
+
+# Start the dummy server in a separate thread
+threading.Thread(target=start_dummy_server, daemon=True).start()
+
+# ------------------- Start Bot -------------------
+if __name__ == "__main__":
+    init_db()
+    print("Bot started...")
+    bot.infinity_polling()
 
 # ------------------- Start Bot -------------------
 if __name__ == "__main__":
