@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SnapLoad — Download Anything</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+:root{
+  --cream:#faf8f3;
+  --cream2:#f3efe6;
+  --cream3:#ece6d8;
+  --navy:#080e1f;
+  --navy2:#141c32;
+  --navy3:#1e2840;
+  --gold:#b8922a;
+  --gold2:#d4ab48;
+  --gold3:#f0cc7a;
+  --text:#1a1a2e;
+  --muted:#6b6878;
+  --muted2:#a8a4b8;
+  --border:rgba(8,14,31,0.09);
+  --border2:rgba(8,14,31,0.18);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Outfit',sans-serif;
+}
+body{background:var(--cream);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+
+/* TEXTURE */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:0.5;
+}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 5vw;height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:background 0.35s,border-color 0.35s,backdrop-filter 0.35s;
+  border-bottom:1px solid transparent;
+}
+nav.scrolled{
+  background:rgba(250,248,243,0.88);
+  backdrop-filter:blur(20px);
+  border-color:var(--border);
+}
+.logo{
+  font-family:var(--serif);font-size:24px;font-weight:600;
+  color:var(--navy);text-decoration:none;letter-spacing:0.5px;
+  display:flex;align-items:center;gap:2px;
+}
+.logo em{font-style:italic;color:var(--gold)}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{
+  font-size:13px;font-weight:400;color:var(--muted);
+  text-decoration:none;letter-spacing:0.3px;transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--text)}
+.nav-pill{
+  padding:9px 22px;border:1px solid var(--navy);border-radius:100px;
+  color:var(--navy)!important;font-weight:500!important;font-size:13px!important;
+  transition:background 0.2s,color 0.2s!important;
+}
+.nav-pill:hover{background:var(--navy);color:var(--cream)!important}
+
+/* HERO */
+.hero{
+  min-height:100vh;padding:120px 5vw 80px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;position:relative;overflow:hidden;
+}
+/* diagonal bg stripe */
+.hero::before{
+  content:'';position:absolute;top:-10%;left:-5%;right:-5%;bottom:30%;
+  background:var(--navy);
+  clip-path:polygon(0 0,100% 0,100% 85%,0 100%);
+  z-index:0;
+}
+.hero-inner{position:relative;z-index:1;width:100%;max-width:900px}
+.hero-eyebrow{
+  display:inline-block;
+  font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:3px;
+  text-transform:uppercase;color:var(--gold3);
+  margin-bottom:24px;
+  opacity:0;animation:rise 0.8s 0.1s forwards;
+}
+.hero-h1{
+  font-family:var(--serif);
+  font-size:clamp(56px,10vw,130px);
+  font-weight:300;line-height:0.9;letter-spacing:-2px;
+  color:#fff;margin-bottom:12px;
+  opacity:0;animation:rise 0.9s 0.2s forwards;
+}
+.hero-h1 em{font-style:italic;color:var(--gold3)}
+.hero-h1 strong{font-weight:700;display:block}
+.hero-h2{
+  font-family:var(--serif);font-size:clamp(32px,5vw,72px);
+  font-weight:300;font-style:italic;color:rgba(255,255,255,0.35);
+  letter-spacing:-1px;margin-bottom:48px;
+  opacity:0;animation:rise 0.9s 0.3s forwards;
+}
+
+/* DOWNLOADER CARD */
+.dl-card{
+  background:var(--cream);border-radius:20px;
+  padding:36px;box-shadow:0 40px 100px rgba(0,0,0,0.35),0 8px 24px rgba(0,0,0,0.15);
+  max-width:700px;width:100%;margin:0 auto;
+  opacity:0;animation:rise 0.9s 0.45s forwards;
+  position:relative;overflow:hidden;
+}
+.dl-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold3),var(--gold2),var(--gold));
+}
+.dl-card-title{
+  font-family:var(--serif);font-size:22px;font-weight:600;
+  color:var(--navy);margin-bottom:6px;letter-spacing:-0.3px;
+}
+.dl-card-sub{font-size:13px;color:var(--muted);font-weight:300;margin-bottom:24px}
+.dl-input-row{
+  display:flex;gap:8px;padding:6px;
+  border:1px solid var(--border2);border-radius:12px;
+  background:#fff;margin-bottom:16px;
+  transition:box-shadow 0.2s,border-color 0.2s;
+}
+.dl-input-row:focus-within{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(184,146,42,0.12);
+}
+.dl-url{
+  flex:1;border:none;outline:none;background:transparent;
+  font-family:var(--sans);font-size:14px;font-weight:300;
+  color:var(--text);padding:10px 14px;
+}
+.dl-url::placeholder{color:var(--muted2)}
+.dl-go{
+  padding:10px 24px;border-radius:8px;border:none;
+  background:var(--navy);color:#fff;
+  font-family:var(--sans);font-size:14px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:background 0.2s,transform 0.15s;white-space:nowrap;
+}
+.dl-go:hover{background:var(--navy2)}
+.dl-go:active{transform:scale(0.97)}
+.dl-go:disabled{opacity:0.5;cursor:not-allowed}
+.opts-row{display:flex;gap:16px;flex-wrap:wrap}
+.opt-group{flex:1;min-width:140px}
+.opt-label{
+  font-size:10px;font-weight:600;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted2);margin-bottom:8px;
+}
+.opt-pills{display:flex;gap:4px;flex-wrap:wrap}
+.opill{
+  padding:6px 14px;border:1px solid var(--border2);border-radius:100px;
+  font-size:12px;font-weight:400;color:var(--muted);
+  background:transparent;cursor:pointer;
+  transition:all 0.15s;font-family:var(--sans);
+}
+.opill:hover{border-color:var(--gold);color:var(--gold)}
+.opill.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:500}
+
+/* Result area */
+.dl-result{margin-top:16px;display:none}
+.res-strip{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  border-radius:10px 10px 0 0;background:var(--cream2);
+  border:1px solid var(--border);border-bottom:none;
+}
+.res-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.res-dot.ok{background:var(--gold)}
+.res-dot.err{background:#c94a4a}
+.res-dot.spin{background:var(--gold2);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.res-label{font-size:13px;font-weight:500;color:var(--navy)}
+.res-body{
+  padding:18px 16px;background:#fff;
+  border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+}
+.res-filename{font-size:11px;font-family:monospace;color:var(--muted);margin-bottom:14px;word-break:break-all}
+.save-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 28px;background:var(--gold);color:#fff;
+  border-radius:100px;font-size:13px;font-weight:600;
+  text-decoration:none;transition:background 0.2s,transform 0.15s;
+  font-family:var(--sans);
+}
+.save-link:hover{background:var(--gold2);transform:translateY(-1px)}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.picker-card{
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+  text-decoration:none;background:var(--cream2);transition:border-color 0.2s;
+}
+.picker-card:hover{border-color:var(--gold)}
+.picker-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--cream3);display:block}
+.picker-foot{padding:10px 12px}
+.picker-lbl{font-size:11px;color:var(--muted);font-weight:300}
+.picker-dl{font-size:12px;color:var(--gold);font-weight:600;margin-top:2px}
+.res-err{font-size:13px;color:var(--muted);line-height:1.7;font-weight:300}
+
+@keyframes rise{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+
+/* TRUSTED BAR */
+.trusted{
+  padding:48px 5vw;background:var(--cream2);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.trusted-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.trusted-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);white-space:nowrap}
+.trusted-line{flex:1;height:1px;background:var(--border2)}
+.plat-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.plat-chip{
+  padding:8px 18px;border:1px solid var(--border2);border-radius:100px;
+  font-size:12px;font-weight:400;color:var(--muted);
+  background:var(--cream);transition:all 0.2s;display:flex;align-items:center;gap:6px;
+}
+.plat-chip:hover{border-color:var(--gold);color:var(--gold);background:#fff}
+
+/* FEATURES */
+.features{padding:100px 5vw;max-width:1200px;margin:0 auto}
+.sec-label{font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.sec-h2{font-family:var(--serif);font-size:clamp(36px,5vw,64px);font-weight:300;letter-spacing:-1.5px;line-height:1.05;margin-bottom:56px}
+.sec-h2 em{font-style:italic;color:var(--muted)}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border)}
+.feat-card{
+  padding:40px 36px;background:var(--cream);transition:background 0.25s;
+}
+.feat-card:hover{background:#fff}
+.feat-num{
+  font-family:var(--serif);font-size:48px;font-weight:300;
+  color:var(--cream3);line-height:1;margin-bottom:20px;
+  transition:color 0.25s;
+}
+.feat-card:hover .feat-num{color:var(--gold3)}
+.feat-title{font-size:17px;font-weight:600;margin-bottom:10px;color:var(--navy)}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.8;font-weight:300}
+
+/* STATS */
+.stats-section{background:var(--navy);padding:80px 5vw}
+.stats-inner{max-width:1100px;margin:0 auto}
+.stats-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:56px;gap:24px;flex-wrap:wrap}
+.stats-hl{font-family:var(--serif);font-size:clamp(32px,5vw,60px);font-weight:300;color:#fff;letter-spacing:-1.5px;line-height:1.1}
+.stats-hl em{font-style:italic;color:var(--gold3)}
+.stats-p{font-size:13px;color:rgba(255,255,255,0.4);max-width:280px;line-height:1.7;font-weight:300}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:rgba(255,255,255,0.06)}
+.stat-card{padding:40px 28px;background:var(--navy)}
+.stat-num{font-family:var(--serif);font-size:56px;font-weight:300;color:var(--gold3);letter-spacing:-2px;line-height:1;margin-bottom:8px}
+.stat-lbl{font-size:12px;color:rgba(255,255,255,0.4);font-weight:300;letter-spacing:0.3px}
+
+/* HOW IT WORKS */
+.how{padding:100px 5vw;max-width:1100px;margin:0 auto}
+.how-head{text-align:center;margin-bottom:72px}
+.how-head h2{font-family:var(--serif);font-size:clamp(36px,5vw,64px);font-weight:300;letter-spacing:-1.5px}
+.how-head h2 em{font-style:italic;color:var(--gold)}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;position:relative}
+.step-connector{
+  position:absolute;top:32px;left:calc(16.66% + 16px);right:calc(16.66% + 16px);
+  height:1px;background:repeating-linear-gradient(90deg,var(--border2) 0,var(--border2) 6px,transparent 6px,transparent 14px);
+}
+.step{padding:0 24px;position:relative;z-index:1}
+.step-circle{
+  width:64px;height:64px;border-radius:50%;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:24px;font-weight:300;
+  color:var(--gold);margin:0 auto 24px;background:var(--cream);
+  transition:background 0.25s,border-color 0.25s;
+}
+.step:hover .step-circle{background:var(--navy);color:var(--gold3);border-color:var(--navy)}
+.step-title{font-size:16px;font-weight:600;text-align:center;margin-bottom:10px;color:var(--navy)}
+.step-desc{font-size:13px;color:var(--muted);text-align:center;line-height:1.7;font-weight:300}
+
+/* CTA */
+.cta-section{
+  background:var(--navy2);padding:120px 5vw;text-align:center;
+  position:relative;overflow:hidden;border-top:1px solid rgba(255,255,255,0.06)
+}
+.cta-bg{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:700px;height:400px;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(184,146,42,0.1) 0%,transparent 70%);
+}
+.cta-kicker{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold3);font-weight:600;margin-bottom:24px;position:relative}
+.cta-h{
+  font-family:var(--serif);font-size:clamp(48px,9vw,110px);
+  font-weight:300;letter-spacing:-3px;line-height:0.9;color:#fff;
+  margin-bottom:48px;position:relative;
+}
+.cta-h em{font-style:italic;color:var(--gold3)}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:12px;
+  padding:18px 44px;border:1px solid rgba(255,255,255,0.15);
+  border-radius:100px;color:#fff;text-decoration:none;
+  font-size:15px;font-weight:500;letter-spacing:0.3px;
+  transition:background 0.25s,border-color 0.25s,transform 0.2s;
+  position:relative;
+}
+.cta-btn:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.3);transform:scale(1.03)}
+.cta-btn-gold{
+  background:var(--gold);border-color:var(--gold);
+  margin-right:12px;
+}
+.cta-btn-gold:hover{background:var(--gold2)!important;border-color:var(--gold2)!important}
+
+/* FOOTER */
+footer{
+  background:var(--navy);padding:40px 5vw;
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
+}
+.footer-logo{font-family:var(--serif);font-size:20px;font-weight:600;color:rgba(255,255,255,0.7)}
+.footer-logo em{font-style:italic;color:var(--gold3)}
+.footer-copy{font-size:12px;color:rgba(255,255,255,0.25);font-weight:300}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:12px;color:rgba(255,255,255,0.3);text-decoration:none;font-weight:300;transition:color 0.2s}
+.footer-links a:hover{color:rgba(255,255,255,0.7)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.8s,transform 0.8s}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:768px){
+  .nav-links{display:none}
+  .opts-row{flex-direction:column}
+  .opt-group{min-width:unset}
+  .stats-top{flex-direction:column;align-items:flex-start}
+  .step-connector{display:none}
+  .cta-btn-gold{margin-right:0;margin-bottom:12px;display:flex}
+  footer{flex-direction:column;text-align:center}
+  .footer-links{justify-content:center}
+  .trusted-line{display:none}
+  .trusted-inner{flex-direction:column}
+}
+@media(max-width:480px){
+  .hero::before{clip-path:polygon(0 0,100% 0,100% 90%,0 100%)}
+  .dl-card{padding:24px 18px}
+  .dl-go{padding:10px 16px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="logo" href="#">Snap<em>Load</em></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#platforms">Platforms</a>
+    <a href="#how">How it works</a>
+    <a href="#hero" class="nav-pill">Download Now</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">The Professional Media Downloader</div>
+    <h1 class="hero-h1">Down<em>load</em><strong>Anything.</strong></h1>
+    <p class="hero-h2">At Maximum Quality.</p>
+
+    <div class="dl-card">
+      <div class="dl-card-title">Paste your link below</div>
+      <div class="dl-card-sub">YouTube · TikTok · Instagram · Twitter/X · Reddit · SoundCloud · 15+ platforms</div>
+      <div class="dl-input-row">
+        <input class="dl-url" id="urlInput" type="text" placeholder="https://youtube.com/watch?v=…" />
+        <button class="dl-go" id="dlBtn" onclick="doDownload()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12.5L2 6.5l1.4-1.4L7 9.2V1h2v8.2l3.6-4.1L14 6.5 8 12.5zM1 15h14v-2H1v2z"/></svg>
+          Download
+        </button>
+      </div>
+      <div class="opts-row">
+        <div class="opt-group">
+          <div class="opt-label">Mode</div>
+          <div class="opt-pills">
+            <button class="opill on" onclick="setMode('auto',this)">Video + Audio</button>
+            <button class="opill" onclick="setMode('audio',this)">Audio Only</button>
+          </div>
+        </div>
+        <div class="opt-group">
+          <div class="opt-label">Quality</div>
+          <div class="opt-pills">
+            <button class="opill on" onclick="setQual('max',this)">Max</button>
+            <button class="opill" onclick="setQual('1080',this)">1080p</button>
+            <button class="opill" onclick="setQual('720',this)">720p</button>
+            <button class="opill" onclick="setQual('480',this)">480p</button>
+          </div>
+        </div>
+      </div>
+      <div class="dl-result" id="dlResult"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUSTED / PLATFORMS -->
+<div class="trusted" id="platforms">
+  <div class="trusted-inner">
+    <span class="trusted-label">Works With</span>
+    <div class="trusted-line"></div>
+    <div class="plat-list">
+      <div class="plat-chip">▶ YouTube</div>
+      <div class="plat-chip">♪ TikTok</div>
+      <div class="plat-chip">◆ Instagram</div>
+      <div class="plat-chip">✕ Twitter / X</div>
+      <div class="plat-chip">● Reddit</div>
+      <div class="plat-chip">◎ Pinterest</div>
+      <div class="plat-chip">◐ SoundCloud</div>
+      <div class="plat-chip">▲ Vimeo</div>
+      <div class="plat-chip">◈ Twitch Clips</div>
+      <div class="plat-chip">◇ Bilibili</div>
+      <div class="plat-chip">○ Dailymotion</div>
+      <div class="plat-chip">+ More</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section style="background:var(--cream2);border-top:1px solid var(--border)" id="features">
+  <div class="features">
+    <div class="reveal">
+      <div class="sec-label">Why SnapLoad</div>
+      <h2 class="sec-h2">Crafted for<br/><em>every creator</em> &amp; power user.</h2>
+    </div>
+    <div class="feat-grid reveal">
+      <div class="feat-card">
+        <div class="feat-num">01</div>
+        <div class="feat-title">Blazing Fast Downloads</div>
+        <div class="feat-desc">Direct download links generated in under a second. No queues, no delays, no bottlenecks.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">02</div>
+        <div class="feat-title">Lossless Quality</div>
+        <div class="feat-desc">Download up to 8K resolution video or lossless audio. We never re-encode or compress your files.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">03</div>
+        <div class="feat-title">No Watermarks</div>
+        <div class="feat-desc">Clean files straight from the source. No overlays, no branding added — pure, original content.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">04</div>
+        <div class="feat-title">Audio Extraction</div>
+        <div class="feat-desc">Extract just the audio track from any video in best-available quality. Perfect for music or podcasts.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">05</div>
+        <div class="feat-title">Completely Private</div>
+        <div class="feat-desc">Zero logs. Zero tracking. Zero data collection. Your activity belongs to you and no one else.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">06</div>
+        <div class="feat-title">Gallery Picker</div>
+        <div class="feat-desc">For carousels and multi-media posts, choose exactly which files to save — all or just one.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section reveal">
+  <div class="stats-inner">
+    <div class="stats-top">
+      <h2 class="stats-hl">Numbers that<br/><em>speak for themselves.</em></h2>
+      <p class="stats-p">SnapLoad is built on cobalt — the open-source, privacy-first media download engine trusted by millions.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">15+</div><div class="stat-lbl">Supported platforms</div></div>
+      <div class="stat-card"><div class="stat-num">8K</div><div class="stat-lbl">Maximum video quality</div></div>
+      <div class="stat-card"><div class="stat-num">0¢</div><div class="stat-lbl">Cost, forever free</div></div>
+      <div class="stat-card"><div class="stat-num">0s</div><div class="stat-lbl">Sign-up required</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="background:var(--cream2);border-top:1px solid var(--border)" id="how">
+  <div class="how reveal">
+    <div class="how-head">
+      <h2>Three steps.<br/><em>That's all.</em></h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-circle">I</div>
+        <div class="step-title">Copy the URL</div>
+        <div class="step-desc">Find any video, reel, audio track, or post on a supported platform and copy its link.</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">II</div>
+        <div class="step-title">Set Your Options</div>
+        <div class="step-desc">Choose video + audio or audio only. Pick your preferred quality level.</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">III</div>
+        <div class="step-title">Save the File</div>
+        <div class="step-desc">Hit Download, get your direct link and save it straight to your device.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section reveal">
+  <div class="cta-bg"></div>
+  <div class="cta-kicker">Get Started — It's Free</div>
+  <h2 class="cta-h">Ready to<br/><em>download</em><br/>anything?</h2>
+  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:12px;position:relative">
+    <a href="#hero" class="cta-btn cta-btn-gold">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12.5L2 6.5l1.4-1.4L7 9.2V1h2v8.2l3.6-4.1L14 6.5 8 12.5zM1 15h14v-2H1v2z"/></svg>
+      Start Downloading
+    </a>
+    <a href="#features" class="cta-btn">Explore Features →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Snap<em>Load</em></div>
+  <div class="footer-copy">© 2025 SnapLoad · Powered by cobalt.tools · No ads · No tracking</div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="https://cobalt.tools" target="_blank">API</a>
+  </div>
+</footer>
+
+<script>
+// Scroll effects
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').classList.toggle('scrolled',scrollY>50);
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// Downloader
+let dlMode='auto',dlQual='max';
+function setMode(m,btn){
+  dlMode=m;
+  btn.parentElement.querySelectorAll('.opill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function setQual(q,btn){
+  dlQual=q;
+  btn.parentElement.querySelectorAll('.opill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')doDownload();});
+
+function showRes(html){
+  const r=document.getElementById('dlResult');
+  r.style.display='block';r.innerHTML=html;
+}
+
+async function doDownload(){
+  const url=document.getElementById('urlInput').value.trim();
+  if(!url){document.getElementById('urlInput').focus();return;}
+  const btn=document.getElementById('dlBtn');
+  btn.disabled=true;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Fetching…';
+  showRes(`<div class="res-strip"><div class="res-dot spin"></div><div class="res-label">Generating download link…</div></div>`);
+  try{
+    const res=await fetch('https://api.cobalt.tools/',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({url,videoQuality:dlQual==='max'?'max':dlQual,downloadMode:dlMode,audioFormat:'best',filenameStyle:'nerdy'})
+    });
+    const d=await res.json();
+    if(d.status==='redirect'||d.status==='tunnel'){
+      const fn=d.filename||'download';
+      showRes(`<div class="res-strip"><div class="res-dot ok"></div><div class="res-label">Ready — ${fn}</div></div>
+        <div class="res-body">
+          <div class="res-filename">${fn}</div>
+          <a class="save-link" href="${d.url}" target="_blank" rel="noopener">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12.5L2 6.5l1.4-1.4L7 9.2V1h2v8.2l3.6-4.1L14 6.5 8 12.5zM1 15h14v-2H1v2z"/></svg>
+            Save File
+          </a>
+        </div>`);
+    } else if(d.status==='picker'){
+      const items=d.picker.map((item,i)=>`
+        <a class="picker-card" href="${item.url}" target="_blank" rel="noopener">
+          ${item.thumb?`<img class="picker-thumb" src="${item.thumb}" alt="item ${i+1}"/>`:''}
+          <div class="picker-foot"><div class="picker-lbl">Item ${i+1}${item.type?' · '+item.type:''}</div><div class="picker-dl">↓ Download</div></div>
+        </a>`).join('');
+      showRes(`<div class="res-strip"><div class="res-dot ok"></div><div class="res-label">Choose items to download</div></div>
+        <div class="res-body"><div class="picker-grid">${items}</div></div>`);
+    } else {
+      const msg=d.error?.code||d.text||'Could not process this URL. Make sure it is public and try again.';
+      showRes(`<div class="res-strip"><div class="res-dot err"></div><div class="res-label">Could not fetch</div></div>
+        <div class="res-body"><div class="res-err">${msg}</div></div>`);
+    }
+  } catch(e){
+    showRes(`<div class="res-strip"><div class="res-dot err"></div><div class="res-label">Network error</div></div>
+      <div class="res-body"><div class="res-err">Could not reach the download service. Please host this file on a web server (Netlify, GitHub Pages) for the downloader to work.<br/><small style="color:var(--muted2);font-size:11px">${e.message}</small></div></div>`);
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12.5L2 6.5l1.4-1.4L7 9.2V1h2v8.2l3.6-4.1L14 6.5 8 12.5zM1 15h14v-2H1v2z"/></svg> Download';
+}
+</script>
+</body>
+</html>
